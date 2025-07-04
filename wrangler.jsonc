@@ -1,0 +1,18 @@
+{
+    // Worker configuration
+    "name": "dongetobede",
+    "main": "src/index.js",
+    "compatibility_date": "2023-10-30",
+    // D1 database configuration
+    "d1_databases": [
+        {
+            "binding": "DB",
+            "database_name": "dongetobede-db",
+            "database_id": "45b42172-38ad-42a9-9280-748b6a4955d3"
+        }
+    ],
+    "observability": {
+        "enabled": true,
+        "head_sampling_rate": 1
+    }
+}
