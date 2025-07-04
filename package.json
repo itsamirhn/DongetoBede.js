@@ -4,6 +4,8 @@
     "description": "Telegram bot for managing shared expenses - JavaScript version for Cloudflare Workers",
     "main": "src/index.js",
     "scripts": {
+        "tail:staging": "wrangler tail --env staging",
+        "tail:production": "wrangler tail --env production",
         "deploy:staging": "wrangler deploy --env staging",
         "deploy:production": "wrangler deploy --env production",
         "db:init:staging": "wrangler d1 execute dongetobede-db-staging --file=./schema.sql",
