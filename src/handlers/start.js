@@ -4,6 +4,7 @@ class StartHandler extends BaseHandler {
     async handle(update) {
         const user = await this.getOrCreateUser(update);
         const chatId = update.message.chat.id;
+        const messageId = update.message.message_id;
 
         // Check if there's data for setcard
         const text = update.message.text;
@@ -18,7 +19,7 @@ class StartHandler extends BaseHandler {
 
 برای راهنمایی کار با بات، از دستور /help استفاده کنید.`;
 
-        await this.sendMessage(chatId, welcomeText);
+        await this.sendMessage(chatId, welcomeText, { reply_to_message_id: messageId });
 
         return { success: true };
     }

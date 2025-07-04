@@ -3,6 +3,7 @@ import BaseHandler from './base.js';
 class HelpHandler extends BaseHandler {
     async handle(update) {
         const chatId = update.message.chat.id;
+        const messageId = update.message.message_id;
 
         const helpText = `
 برای ثبت خرج در هر گروهی، به گروه خود بروید و دستور زیر را تایپ کنید:
@@ -27,7 +28,8 @@ class HelpHandler extends BaseHandler {
 
         await this.sendMessage(chatId, helpText, {
             parse_mode: 'HTML',
-            reply_markup: markup
+            reply_markup: markup,
+            reply_to_message_id: messageId
         });
 
         return { success: true };

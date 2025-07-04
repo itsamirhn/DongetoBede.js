@@ -4,6 +4,7 @@ class CancelHandler extends BaseHandler {
     async handle(update) {
         const user = await this.getOrCreateUser(update);
         const chatId = update.message.chat.id;
+        const messageId = update.message.message_id;
 
         // Reset user state
         user.state = '';
@@ -11,7 +12,7 @@ class CancelHandler extends BaseHandler {
 
         const text = `عملیات لغو شد.`;
 
-        await this.sendMessage(chatId, text);
+        await this.sendMessage(chatId, text, { reply_to_message_id: messageId });
 
         return { success: true };
     }
