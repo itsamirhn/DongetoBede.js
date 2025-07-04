@@ -13,13 +13,14 @@ A Telegram bot for managing shared expenses ("dong") with inline queries and pay
 - 🌐 Persian language support
 - ⚡ Cloudflare Workers deployment
 - 🗄️ D1 database storage
+- 🔄 Multi-environment support (staging/production)
 
-## Quick Setup
+## Setup
 
 ### Prerequisites
 
 - Cloudflare account
-- Telegram bot token from [@BotFather](https://t.me/BotFather)
+- Telegram bot tokens from [@BotFather](https://t.me/BotFather)
 - Node.js and yarn
 
 ### Installation
@@ -30,48 +31,76 @@ A Telegram bot for managing shared expenses ("dong") with inline queries and pay
    git clone <repository-url>
    cd dongetobede-js
    yarn install
-   ```
-
-2. **Login to Cloudflare**
-
-   ```bash
    yarn wrangler login
    ```
 
-3. **Create D1 Database**
+2. **Create D1 Databases**
 
    ```bash
-   yarn wrangler d1 create dongetobede-db
+   yarn wrangler d1 create dongetobede-db-staging
+   yarn wrangler d1 create dongetobede-db-production
    ```
 
-   Copy the database ID and update `wrangler.jsonc` with your database ID.
+   Update `wrangler.jsonc` with your database IDs.
 
-4. **Initialize Database**
+3. **Initialize Databases**
 
    ```bash
-   yarn db:init
+   yarn db:init:staging
+   yarn db:init:production
    ```
 
-5. **Set Secrets**
+4. **Set Secrets**
 
    ```bash
-   yarn wrangler secret put TELEGRAM_BOT_TOKEN
-   yarn wrangler secret put TELEGRAM_WEBHOOK_SECRET
+   yarn wrangler secret put TELEGRAM_BOT_TOKEN --env staging
+   yarn wrangler secret put TELEGRAM_WEBHOOK_SECRET --env staging
+   yarn wrangler secret put TELEGRAM_BOT_TOKEN --env production
+   yarn wrangler secret put TELEGRAM_WEBHOOK_SECRET --env production
    ```
 
-6. **Deploy**
+5. **Deploy**
 
    ```bash
-   yarn deploy
+   yarn deploy:staging
+   yarn deploy:production
    ```
 
-7. **Set Webhook**
+6. **Set Webhooks**
 
    ```bash
-   curl -X POST "https://api.telegram.org/botYOUR_BOT_TOKEN/setWebhook" \
+   # Staging
+   curl -X POST "https://api.telegram.org/botYOUR_STAGING_BOT_TOKEN/setWebhook" \
         -H "Content-Type: application/json" \
-        -d '{"url": "YOUR_WORKER_URL", "secret_token": "YOUR_WEBHOOK_SECRET"}'
+        -d '{"url": "YOUR_STAGING_WORKER_URL", "secret_token": "YOUR_STAGING_WEBHOOK_SECRET"}'
+
+   # Production
+   curl -X POST "https://api.telegram.org/botYOUR_PRODUCTION_BOT_TOKEN/setWebhook" \
+        -H "Content-Type: application/json" \
+        -d '{"url": "YOUR_PRODUCTION_WORKER_URL", "secret_token": "YOUR_PRODUCTION_WEBHOOK_SECRET"}'
    ```
+
+## Development
+
+### Available Commands
+
+```bash
+# Local development
+yarn dev:staging
+yarn dev:production
+
+# Deploy
+yarn deploy:staging
+yarn deploy:production
+
+# Database operations
+yarn db:init:staging
+yarn db:init:production
+```
+
+### Environment Switching
+
+Simply add `:staging` or `:production` to any command to target the specific environment. Each environment has its own database, secrets, and deployment.
 
 ## LICENSE
 

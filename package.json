@@ -4,9 +4,10 @@
     "description": "Telegram bot for managing shared expenses - JavaScript version for Cloudflare Workers",
     "main": "src/index.js",
     "scripts": {
-        "dev": "wrangler dev",
-        "deploy": "wrangler deploy",
-        "db:init": "wrangler d1 execute dongetobede-db --file=./schema.sql"
+        "deploy:staging": "wrangler deploy --env staging",
+        "deploy:production": "wrangler deploy --env production",
+        "db:init:staging": "wrangler d1 execute dongetobede-db-staging --file=./schema.sql",
+        "db:init:production": "wrangler d1 execute dongetobede-db-production --file=./schema.sql"
     },
     "dependencies": {
         "expr-eval": "^2.0.2"
@@ -22,6 +23,6 @@
         "workers",
         "d1"
     ],
-    "author": "",
+    "author": "AmirMohammad HosseiniNasab",
     "license": "MIT"
 }

@@ -1,18 +1,31 @@
 {
-    // Worker configuration
     "name": "dongetobede",
     "main": "src/index.js",
     "compatibility_date": "2023-10-30",
-    // D1 database configuration
-    "d1_databases": [
-        {
-            "binding": "DB",
-            "database_name": "dongetobede-db",
-            "database_id": "45b42172-38ad-42a9-9280-748b6a4955d3"
-        }
-    ],
     "observability": {
         "enabled": true,
         "head_sampling_rate": 1
+    },
+    "env": {
+        "staging": {
+            "name": "dongetobede-staging",
+            "d1_databases": [
+                {
+                    "binding": "DB",
+                    "database_name": "dongetobede-db-staging",
+                    "database_id": "3cc15ddd-7d86-4159-9ca9-5e2ed8bc8cca"
+                }
+            ]
+        },
+        "production": {
+            "name": "dongetobede-production",
+            "d1_databases": [
+                {
+                    "binding": "DB",
+                    "database_name": "dongetobede-db-production",
+                    "database_id": "106c6c0a-0355-444e-9800-e03540e947d3"
+                }
+            ]
+        }
     }
 }
