@@ -70,6 +70,7 @@ export const BUTTONS = {
 // Regex Patterns
 export const PATTERNS = {
     CARD_NUMBER: /^[2569]\d{15}$/,
+    CARD_NUMBER_IN_TEXT: /[2569]\d{15}/,
     DEEP_LINK_SETCARD: /start setcard/,
     CALLBACK_PAYDONG: /paydong\|(.+)/
 };
@@ -92,4 +93,10 @@ export const ERRORS = {
     USER_NOT_FOUND: 'User not found',
     INVALID_EXPRESSION: 'Invalid expression',
     INVALID_AMOUNT: 'Invalid amount'
+};
+
+// AI Configuration
+export const AI = {
+    MODEL: '@cf/meta/llama-3-8b-instruct',
+    SYSTEM_PROMPT: 'You are a helpful assistant that extracts financial information from Persian/English text. Extract the total_amount (as a number) and card_number (16 digits) from the given text. Return only a JSON object with these fields: {"total_amount": number, "card_number": "string"}. If no card number is found, return null for card_number. If no amount is found, return null for total_amount. DO NOT RETURN ANYTHING ELSE THAN THE JSON OBJECT.'
 }; 

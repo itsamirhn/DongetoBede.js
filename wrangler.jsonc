@@ -14,7 +14,10 @@
                     "database_name": "dongetobede-db-staging",
                     "database_id": "3cc15ddd-7d86-4159-9ca9-5e2ed8bc8cca"
                 }
-            ]
+            ],
+            "ai": {
+                "binding": "AI"
+            }
         },
         "production": {
             "name": "dongetobede-production",
@@ -27,7 +30,10 @@
                     "database_name": "dongetobede-db-production",
                     "database_id": "106c6c0a-0355-444e-9800-e03540e947d3"
                 }
-            ]
+            ],
+            "ai": {
+                "binding": "AI"
+            }
         }
     }
 }

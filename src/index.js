@@ -34,7 +34,7 @@ export default {
             if (update.message) {
                 result = await this.handleMessage(db, update, env.BOT_USERNAME);
             } else if (update.inline_query) {
-                result = await handleInline(db, update);
+                result = await handleInline(db, update, env);
             } else if (update.chosen_inline_result) {
                 result = await handleInlineResult(db, update);
             } else if (update.callback_query) {

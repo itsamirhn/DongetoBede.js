@@ -2,8 +2,31 @@ import { sendMessage, editMessage, editInlineMessage, answerInlineQuery, answerC
 import { getOrCreateUser } from './utils/user.js';
 import { toEnglishDigits, toPersianDigitsFromInt } from './utils/persian.js';
 import { getDongText, getDongMarkup, getDongPerPersonToman } from './utils/formatting.js';
-import evaluateExpression from './utils/expression.js';
-import { MESSAGES, CALLBACK_MESSAGES, INLINE_CONTENT, BUTTONS, PATTERNS, CONFIG, ERRORS, API } from './constants.js';
+import { MESSAGES, CALLBACK_MESSAGES, INLINE_CONTENT, BUTTONS, PATTERNS, CONFIG, ERRORS, API, AI } from './constants.js';
+
+// Helper function to call Cloudflare Workers AI
+async function callWorkerAI(env, query) {
+    const response = await env.AI.run(AI.MODEL, {
+        messages: [
+            {
+                role: 'system',
+                content: AI.SYSTEM_PROMPT
+            },
+            {
+                role: 'user',
+                content: query
+            }
+        ]
+    });
+
+    try {
+        const result = JSON.parse(response.response);
+        return result;
+    } catch (error) {
+        console.error('Error parsing AI response:', error);
+        throw new Error('Failed to parse AI response');
+    }
+}
 
 async function handleStart(db, update) {
     const user = await getOrCreateUser(db, update);
@@ -112,22 +135,44 @@ async function handleSetCardText(db, chatId, messageText, user, messageId) {
     return { success: true };
 }
 
-async function handleInline(db, update) {
+async function handleInline(db, update, env) {
     const user = await getOrCreateUser(db, update);
-    const query = update.inline_query.query;
+    const query = toEnglishDigits(update.inline_query.query);
     const inlineQueryId = update.inline_query.id;
 
-    const expressionStr = toEnglishDigits(query);
-
     try {
-        const amountFloat = evaluateExpression(expressionStr);
-        const amount = Math.round(amountFloat);
+        let amount;
+        let cardNumber = user.cardNumber;
+
+        if (/^\d+$/.test(query.trim())) {
+            amount = parseInt(query.trim());
+        } else {
+            const cardNumberMatch = query.match(PATTERNS.CARD_NUMBER_IN_TEXT);
+            if (cardNumberMatch) {
+                const aiResult = await callWorkerAI(env, query);
+
+                if (aiResult && aiResult.total_amount) {
+                    amount = Math.round(aiResult.total_amount);
+                    if (aiResult.card_number && PATTERNS.CARD_NUMBER.test(aiResult.card_number)) {
+                        cardNumber = aiResult.card_number;
+                    }
+                } else {
+                    throw new Error(ERRORS.INVALID_AMOUNT);
+                }
+            } else {
+                const numericValue = parseFloat(query.trim());
+                if (isNaN(numericValue)) {
+                    throw new Error(ERRORS.INVALID_AMOUNT);
+                }
+                amount = Math.round(numericValue);
+            }
+        }
 
         if (amount <= 0) {
             throw new Error(ERRORS.INVALID_AMOUNT);
         }
 
-        const results = getValidArticles(amount, user.cardNumber);
+        const results = getValidArticles(amount, cardNumber);
         await answerInlineQuery(inlineQueryId, results);
     } catch (error) {
         const results = [getInvalidArticle()];
@@ -155,7 +200,7 @@ function getValidLimitedArticle(amount, totalPeople, cardNumber) {
 
     return {
         type: 'article',
-        id: `${amount}-${totalPeople}`,
+        id: `${amount}-${totalPeople}-${cardNumber}`,
         title: `${INLINE_CONTENT.DONG_PREFIX} ${totalPeopleStr} ${INLINE_CONTENT.LIMITED_TITLE_SUFFIX}`,
         description: `${INLINE_CONTENT.PER_PERSON_PREFIX} ${perPersonStr}`,
         input_message_content: {
@@ -172,7 +217,7 @@ function getValidUnlimitedArticle(amount, cardNumber) {
 
     return {
         type: 'article',
-        id: `${amount}-0`,
+        id: `${amount}-0-${cardNumber}`,
         title: INLINE_CONTENT.UNLIMITED_TITLE,
         description: `${INLINE_CONTENT.PER_PERSON_PREFIX} ${perPersonStr}`,
         input_message_content: {
@@ -215,13 +260,17 @@ async function handleInlineResult(db, update) {
         return { success: true };
     }
 
-    const [amount, totalPeople] = resultId.split('-').map(Number);
+    const resultParts = resultId.split('-');
+    const amount = Number(resultParts[0]);
+    const totalPeople = Number(resultParts[1]);
+    const cardNumber = resultParts[2];
+
     const messageId = chosenInlineResult.inline_message_id;
 
     const dong = {
         issuerUserId: user.id,
         amount: amount,
-        cardNumber: user.cardNumber,
+        cardNumber: cardNumber,
         totalPeople: totalPeople,
         paidUserIds: [],
         messageId: messageId
@@ -229,8 +278,8 @@ async function handleInlineResult(db, update) {
 
     const dongId = await db.addDong(dong);
 
-    const newText = getDongText(amount, totalPeople, user.cardNumber, []);
-    const newMarkup = getDongMarkup(0, totalPeople, user.cardNumber, dongId);
+    const newText = getDongText(amount, totalPeople, cardNumber, []);
+    const newMarkup = getDongMarkup(0, totalPeople, cardNumber, dongId);
 
     await editInlineMessage(messageId, newText, { reply_markup: newMarkup });
 

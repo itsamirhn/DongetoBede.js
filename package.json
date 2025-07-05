@@ -11,9 +11,7 @@
         "db:init:staging": "wrangler d1 execute dongetobede-db-staging --file=./schema.sql",
         "db:init:production": "wrangler d1 execute dongetobede-db-production --file=./schema.sql"
     },
-    "dependencies": {
-        "expr-eval": "^2.0.2"
-    },
+    "dependencies": {},
     "devDependencies": {
         "wrangler": "^4.0.0"
     },
