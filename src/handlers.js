@@ -263,7 +263,7 @@ async function handleInlineResult(db, update) {
     const resultParts = resultId.split('-');
     const amount = Number(resultParts[0]);
     const totalPeople = Number(resultParts[1]);
-    const cardNumber = resultParts[2];
+    const cardNumber = resultParts[2] === "null" ? null : resultParts[2] ;
 
     const messageId = chosenInlineResult.inline_message_id;
 
