@@ -1,6 +1,6 @@
 import { sendMessage, editMessage, editInlineMessage, answerInlineQuery, answerCallbackQuery } from './utils/telegram.js';
 import { getOrCreateUser } from './utils/user.js';
-import { toEnglishDigits, toPersianDigitsFromInt } from './utils/persian.js';
+import {toEnglishDigits, toPersianDigits, toPersianDigitsFromInt} from './utils/persian.js';
 import { getDongText, getDongMarkup, getDongPerPersonToman } from './utils/formatting.js';
 import { MESSAGES, CALLBACK_MESSAGES, INLINE_CONTENT, BUTTONS, PATTERNS, CONFIG, ERRORS, API, AI } from './constants.js';
 
@@ -197,12 +197,12 @@ function getValidLimitedArticle(amount, totalPeople, cardNumber) {
     const perPersonStr = getDongPerPersonToman(amount, totalPeople);
     const totalPeopleStr = toPersianDigitsFromInt(totalPeople);
     const txt = getDongText(amount, totalPeople, cardNumber, []);
-
+    const cardNumberStr = cardNumber ? toPersianDigits(cardNumber) : '';
     return {
         type: 'article',
         id: `${amount}-${totalPeople}-${cardNumber}`,
-        title: `${INLINE_CONTENT.DONG_PREFIX} ${totalPeopleStr} ${INLINE_CONTENT.LIMITED_TITLE_SUFFIX}`,
-        description: `${INLINE_CONTENT.PER_PERSON_PREFIX} ${perPersonStr}`,
+        title: INLINE_CONTENT.LIMITED_TITLE(totalPeopleStr),
+        description: INLINE_CONTENT.VALID_DESCRIPTION(perPersonStr, cardNumberStr),
         input_message_content: {
             message_text: txt,
             parse_mode: API.PARSE_MODE.MARKDOWN
@@ -214,12 +214,12 @@ function getValidLimitedArticle(amount, totalPeople, cardNumber) {
 function getValidUnlimitedArticle(amount, cardNumber) {
     const perPersonStr = getDongPerPersonToman(amount, 0);
     const txt = getDongText(amount, 0, cardNumber, []);
-
+    const cardNumberStr = cardNumber ? toPersianDigits(cardNumber) : '';
     return {
         type: 'article',
         id: `${amount}-0-${cardNumber}`,
         title: INLINE_CONTENT.UNLIMITED_TITLE,
-        description: `${INLINE_CONTENT.PER_PERSON_PREFIX} ${perPersonStr}`,
+        description: INLINE_CONTENT.VALID_DESCRIPTION(perPersonStr, cardNumberStr),
         input_message_content: {
             message_text: txt,
             parse_mode: API.PARSE_MODE.MARKDOWN

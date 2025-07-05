@@ -24,20 +24,9 @@ function toPersianDigitsFromInt(num) {
     return toPersianDigits(num.toString());
 }
 
-function formatNumberPersian(num) {
-    const formatted = num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    return toPersianDigits(formatted);
-}
-
-function formatTomanPersian(amount) {
-    const toman = Math.floor(amount / 10);
-    return formatNumberPersian(toman) + ' تومان';
-}
 
 export {
     toPersianDigits,
     toEnglishDigits,
     toPersianDigitsFromInt,
-    formatNumberPersian,
-    formatTomanPersian
-}; 
+};

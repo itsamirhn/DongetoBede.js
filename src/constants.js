@@ -23,11 +23,13 @@ export const MESSAGES = {
     HELP: (botUsername) => `
 برای ثبت خرج در هر گروهی، به گروه خود بروید و دستور زیر را تایپ کنید:
  
-<code>@${botUsername} {مبلغ}</code>
+<code>@${botUsername} {مبلغ و شماره کارت}</code>
 
-و سپس تعداد نفرات را انتخاب کنید.
+متن ورودی شما به کمک هوش مصنوعی پردازش شده و مبلغ و شماره کارتتان به طور خودکار استخراج می‌شود.
 
-اگر میخواهید شماره کارت شما در پیام دونگ نوشته شود، از دستور /setcard استفاده کنید.
+سپس از بین موارد موجود، تعداد نفرات را انتخاب کنید.
+
+اگر میخواهید شماره کارت ثابت شما در پیام دونگ نوشته شود، از دستور /setcard استفاده کنید.
 `,
 
     SET_CARD_PROMPT: `برای ست شدن پیش‌فرض شماره کارت، لطفا شماره کارت خود را ارسال کنید.`,
@@ -40,7 +42,7 @@ export const MESSAGES = {
 
     CARD_SUCCESS: `شماره کارت شما با موفقیت ثبت شد.`,
 
-    INVALID_EXPRESSION: ` مبلغ نامعتبر است. لطفا مبلغ را به صورت  عددی یا یک عبارت ریاضی غیر اعشاری وارد کنید.`
+    INVALID_EXPRESSION: ` مبلغ نامعتبر است. لطفا مبلغ و یا شماره کارت را به صورت عددی غیر اعشاری وارد کنید.`
 };
 
 // Callback Messages
@@ -54,11 +56,15 @@ export const CALLBACK_MESSAGES = {
 // Inline Article Content
 export const INLINE_CONTENT = {
     INVALID_TITLE: 'مبلغ نامعتبر',
-    INVALID_DESCRIPTION: 'مجموع هزینه را به تومان وارد کنید.',
+    INVALID_DESCRIPTION: 'مجموع هزینه را وارد کنید.',
     UNLIMITED_TITLE: 'دنگ نامحدود',
-    LIMITED_TITLE_SUFFIX: 'نفره',
-    DONG_PREFIX: 'دنگ',
-    PER_PERSON_PREFIX: 'نفری'
+    LIMITED_TITLE: (totalPeople) => `دنگ ${totalPeople} نفره`,
+    VALID_DESCRIPTION: (perPerson, cardNumber) => {
+        if (cardNumber) {
+            return `نفری ${perPerson} به کارت ${cardNumber}`
+        }
+        return `نفری ${perPerson}`
+    },
 };
 
 // Button Text

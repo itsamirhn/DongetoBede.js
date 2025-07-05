@@ -18,7 +18,7 @@ function getDongPerPersonToman(amount, totalPeople) {
 
 function getDongText(amount, totalPeople, cardNumber, paidUsers) {
     const perPersonStr = getDongPerPersonToman(amount, totalPeople);
-    let text = `نفری ${perPersonStr}`;
+    let text = `دنگ هر نفر: ${perPersonStr}`;
 
     if (cardNumber) {
         text += `\nشماره کارت: \`${cardNumber}\``;
