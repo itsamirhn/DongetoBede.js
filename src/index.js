@@ -1,22 +1,23 @@
 import DatabaseClient from './database/client.js';
-import StartHandler from './handlers/start.js';
-import SetCardHandler from './handlers/setcard.js';
-import HelpHandler from './handlers/help.js';
-import CancelHandler from './handlers/cancel.js';
-import InlineHandler from './handlers/inline.js';
-import InlineResultHandler from './handlers/inline-result.js';
-import CallbackHandler from './handlers/callback.js';
-import TextHandler from './handlers/text.js';
+import { setBotToken } from './utils/telegram.js';
+import {
+    handleStart,
+    handleSetCard,
+    handleHelp,
+    handleCancel,
+    handleText,
+    handleInline,
+    handleInlineResult,
+    handleCallback
+} from './handlers.js';
 
 export default {
     async fetch(request, env, ctx) {
         try {
-            // Only accept POST requests
             if (request.method !== 'POST') {
                 return new Response('Method not allowed', { status: 405 });
             }
 
-            // Verify webhook secret if configured
             if (env.TELEGRAM_WEBHOOK_SECRET) {
                 const providedSecret = request.headers.get('X-Telegram-Bot-Api-Secret-Token');
                 if (providedSecret !== env.TELEGRAM_WEBHOOK_SECRET) {
@@ -24,50 +25,25 @@ export default {
                 }
             }
 
-            // Parse the update from Telegram
             const update = await request.json();
-
-            // Initialize database client
             const db = new DatabaseClient(env.DB);
+            setBotToken(env.TELEGRAM_BOT_TOKEN);
 
-            // Initialize handlers
-            const handlers = {
-                start: new StartHandler(db),
-                setcard: new SetCardHandler(db),
-                help: new HelpHandler(db),
-                cancel: new CancelHandler(db),
-                inline: new InlineHandler(db),
-                inlineResult: new InlineResultHandler(db),
-                callback: new CallbackHandler(db),
-                text: new TextHandler(db)
-            };
-
-            // Set bot token for all handlers
-            const botToken = env.TELEGRAM_BOT_TOKEN;
-            Object.values(handlers).forEach(handler => {
-                handler.setBotToken(botToken);
-            });
-
-            // Route the update to the appropriate handler
             let result = { success: false };
 
             if (update.message) {
-                result = await this.handleMessage(update, handlers);
+                result = await this.handleMessage(db, update, env.BOT_USERNAME);
             } else if (update.inline_query) {
-                result = await handlers.inline.handle(update);
+                result = await handleInline(db, update);
             } else if (update.chosen_inline_result) {
-                result = await handlers.inlineResult.handle(update);
+                result = await handleInlineResult(db, update);
             } else if (update.callback_query) {
-                result = await handlers.callback.handle(update);
-            } else {
-                // console.log('Unhandled update type:', update);
+                result = await handleCallback(db, update);
             }
 
             return new Response(JSON.stringify(result), {
                 status: 200,
-                headers: {
-                    'Content-Type': 'application/json'
-                }
+                headers: { 'Content-Type': 'application/json' }
             });
 
         } catch (error) {
@@ -76,35 +52,31 @@ export default {
         }
     },
 
-    async handleMessage(update, handlers) {
+    async handleMessage(db, update, botUsername) {
         const message = update.message;
         const text = message.text;
 
-        // Handle commands
         if (text && text.startsWith('/')) {
             const command = text.split(' ')[0].substring(1).toLowerCase();
 
             switch (command) {
                 case 'start':
-                    return await handlers.start.handle(update);
+                    return await handleStart(db, update);
                 case 'setcard':
-                    return await handlers.setcard.handle(update);
+                    return await handleSetCard(db, update);
                 case 'help':
-                    return await handlers.help.handle(update);
+                    return await handleHelp(db, update, botUsername);
                 case 'cancel':
-                    return await handlers.cancel.handle(update);
+                    return await handleCancel(db, update);
                 default:
-                    // Unknown command, show help
-                    return await handlers.help.handle(update);
+                    return await handleHelp(db, update, botUsername);
             }
         }
 
-        // Handle regular text messages
         if (text) {
-            return await handlers.text.handle(update);
+            return await handleText(db, update);
         }
 
-        // Handle other message types (photos, documents, etc.)
         return { success: true, message: 'Message type not handled' };
     }
 }; 

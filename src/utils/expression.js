@@ -1,33 +1,26 @@
 import { Parser } from 'expr-eval';
+import { ERRORS } from '../constants.js';
 
-class ExpressionEvaluator {
-    constructor() {
-        this.parser = new Parser();
-    }
+const parser = new Parser();
 
-    eval(expression) {
-        try {
-            if (!expression || typeof expression !== 'string') {
-                throw new Error('Invalid expression');
-            }
-
-            // Clean the expression
-            const cleanExpression = expression.trim();
-
-            // Parse and evaluate the expression
-            const expr = this.parser.parse(cleanExpression);
-            const result = expr.evaluate();
-
-            // Check if result is a valid number
-            if (typeof result !== 'number' || isNaN(result) || !isFinite(result)) {
-                throw new Error('Invalid expression result');
-            }
-
-            return result;
-        } catch (error) {
-            throw new Error('Invalid expression');
+function evaluateExpression(expression) {
+    try {
+        if (!expression || typeof expression !== 'string') {
+            throw new Error(ERRORS.INVALID_EXPRESSION);
         }
+
+        const cleanExpression = expression.trim();
+        const expr = parser.parse(cleanExpression);
+        const result = expr.evaluate();
+
+        if (typeof result !== 'number' || isNaN(result) || !isFinite(result)) {
+            throw new Error(ERRORS.INVALID_EXPRESSION);
+        }
+
+        return result;
+    } catch (error) {
+        throw new Error(ERRORS.INVALID_EXPRESSION);
     }
 }
 
-export default ExpressionEvaluator; 
+export default evaluateExpression; 

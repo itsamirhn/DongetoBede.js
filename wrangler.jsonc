@@ -5,6 +5,9 @@
     "env": {
         "staging": {
             "name": "dongetobede-staging",
+            "vars": {
+                "BOT_USERNAME": "dongamobedebot"
+            },
             "d1_databases": [
                 {
                     "binding": "DB",
@@ -15,6 +18,9 @@
         },
         "production": {
             "name": "dongetobede-production",
+            "vars": {
+                "BOT_USERNAME": "dongetobedebot"
+            },
             "d1_databases": [
                 {
                     "binding": "DB",

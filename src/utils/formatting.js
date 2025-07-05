@@ -1,6 +1,5 @@
 import { toPersianDigitsFromInt, toPersianDigits } from './persian.js';
 
-// Generate per-person cost string (matching Go implementation)
 function getDongPerPersonToman(amount, totalPeople) {
     let priceFloat = amount;
     if (totalPeople > 0) {
@@ -17,7 +16,6 @@ function getDongPerPersonToman(amount, totalPeople) {
     return toPersianDigits(priceStr);
 }
 
-// Generate dong message text
 function getDongText(amount, totalPeople, cardNumber, paidUsers) {
     const perPersonStr = getDongPerPersonToman(amount, totalPeople);
     let text = `نفری ${perPersonStr}`;
@@ -40,7 +38,6 @@ function getDongText(amount, totalPeople, cardNumber, paidUsers) {
     return text;
 }
 
-// Generate inline keyboard markup for dong
 function getDongMarkup(paidUsersCount, totalPeople, cardNumber, dongId) {
     let buttonText;
     if (totalPeople > 0) {
