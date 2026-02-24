@@ -21,7 +21,7 @@ A Telegram bot for managing shared expenses ("dong") with inline queries and pay
 
 - Cloudflare account
 - Telegram bot tokens from [@BotFather](https://t.me/BotFather)
-- Node.js and yarn
+- [Bun](https://bun.sh)
 
 ### Installation
 
@@ -30,15 +30,15 @@ A Telegram bot for managing shared expenses ("dong") with inline queries and pay
    ```bash
    git clone <repository-url>
    cd dongetobede-js
-   yarn install
-   yarn wrangler login
+   bun install
+   bunx wrangler login
    ```
 
 2. **Create D1 Databases**
 
    ```bash
-   yarn wrangler d1 create dongetobede-db-staging
-   yarn wrangler d1 create dongetobede-db-production
+   bunx wrangler d1 create dongetobede-db-staging
+   bunx wrangler d1 create dongetobede-db-production
    ```
 
    Update `wrangler.jsonc` with your database IDs.
@@ -46,24 +46,24 @@ A Telegram bot for managing shared expenses ("dong") with inline queries and pay
 3. **Initialize Databases**
 
    ```bash
-   yarn db:init:staging
-   yarn db:init:production
+   bun db:init:staging
+   bun db:init:production
    ```
 
 4. **Set Secrets**
 
    ```bash
-   yarn wrangler secret put TELEGRAM_BOT_TOKEN --env staging
-   yarn wrangler secret put TELEGRAM_WEBHOOK_SECRET --env staging
-   yarn wrangler secret put TELEGRAM_BOT_TOKEN --env production
-   yarn wrangler secret put TELEGRAM_WEBHOOK_SECRET --env production
+   bunx wrangler secret put TELEGRAM_BOT_TOKEN --env staging
+   bunx wrangler secret put TELEGRAM_WEBHOOK_SECRET --env staging
+   bunx wrangler secret put TELEGRAM_BOT_TOKEN --env production
+   bunx wrangler secret put TELEGRAM_WEBHOOK_SECRET --env production
    ```
 
 5. **Deploy**
 
    ```bash
-   yarn deploy:staging
-   yarn deploy:production
+   bun deploy:staging
+   bun deploy:production
    ```
 
 6. **Set Webhooks**
@@ -85,17 +85,17 @@ A Telegram bot for managing shared expenses ("dong") with inline queries and pay
 ### Available Commands
 
 ```bash
-# Local development
-yarn dev:staging
-yarn dev:production
-
 # Deploy
-yarn deploy:staging
-yarn deploy:production
+bun deploy:staging
+bun deploy:production
 
 # Database operations
-yarn db:init:staging
-yarn db:init:production
+bun db:init:staging
+bun db:init:production
+
+# Stream logs
+bun tail:staging
+bun tail:production
 ```
 
 ### Environment Switching
