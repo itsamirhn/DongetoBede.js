@@ -76,7 +76,6 @@ export const BUTTONS = {
 // Regex Patterns
 export const PATTERNS = {
     CARD_NUMBER: /^[2569]\d{15}$/,
-    CARD_NUMBER_IN_TEXT: /[2569]\d{15}/,
     DEEP_LINK_SETCARD: /start setcard/,
     CALLBACK_PAYDONG: /paydong\|(.+)/
 };
@@ -103,6 +102,28 @@ export const ERRORS = {
 
 // AI Configuration
 export const AI = {
-    MODEL: '@cf/meta/llama-3-8b-instruct',
-    SYSTEM_PROMPT: 'You are a helpful assistant that extracts financial information from Persian/English text. Extract the total_amount (as a number) and card_number (16 digits) from the given text. Return only a JSON object with these fields: {"total_amount": number, "card_number": "string"}. If no card number is found, return null for card_number. If no amount is found, return null for total_amount. DO NOT RETURN ANYTHING ELSE THAN THE JSON OBJECT.'
+    MODEL: '@cf/meta/llama-4-scout-17b-16e-instruct',
+    SYSTEM_PROMPT: `You extract two fields from short Persian or English text describing a shared expense ("dong").
+
+Rules for total_amount:
+- The text may contain ONE or MORE money amounts. Sum ALL of them into a single total.
+- Amounts may be digits ("56000"), or Persian/English words ("پنجاه و شش هزار", "fifty six thousand").
+- Apply multipliers: هزار / "k" = ×1000, میلیون / "m" = ×1,000,000, تومان/تومن/toman is the currency unit (do not multiply).
+- "۵۶ هزار تومان" = 56000. "دو میلیون و پانصد هزار" = 2500000. "25 هزار + 35 هزار" = 60000.
+- Return total_amount as an integer number of Toman. If no amount is present, return 0.
+
+Rules for card_number:
+- A 16-digit Iranian bank card number (starts with 2, 5, 6, or 9). Strip spaces/dashes.
+- If no valid 16-digit card number is present, return an empty string "".
+
+Return ONLY the structured object. Do not explain.`,
+    // JSON-schema for Workers AI structured outputs — guarantees schema-valid JSON.
+    SCHEMA: {
+        type: 'object',
+        properties: {
+            total_amount: { type: 'number', description: 'Total amount in Toman, sum of all amounts. 0 if none.' },
+            card_number: { type: 'string', description: '16-digit card number, or "" if none.' }
+        },
+        required: ['total_amount', 'card_number']
+    }
 }; 

@@ -4,7 +4,9 @@ import {toEnglishDigits, toPersianDigits, toPersianDigitsFromInt} from './utils/
 import { getDongText, getDongMarkup, getDongPerPersonToman } from './utils/formatting.js';
 import { MESSAGES, CALLBACK_MESSAGES, INLINE_CONTENT, BUTTONS, PATTERNS, CONFIG, ERRORS, API, AI } from './constants.js';
 
-// Helper function to call Cloudflare Workers AI
+// Helper function to call Cloudflare Workers AI.
+// Uses structured outputs (response_format json_schema) so the model is
+// constrained to return schema-valid JSON.
 async function callWorkerAI(env, query) {
     const response = await env.AI.run(AI.MODEL, {
         messages: [
@@ -16,16 +18,27 @@ async function callWorkerAI(env, query) {
                 role: 'user',
                 content: query
             }
-        ]
+        ],
+        temperature: 0,
+        response_format: { type: 'json_schema', json_schema: AI.SCHEMA }
     });
 
-    try {
-        const result = JSON.parse(response.response);
-        return result;
-    } catch (error) {
-        console.error('Error parsing AI response:', error);
-        throw new Error('Failed to parse AI response');
+    let result = response.response;
+    if (typeof result === 'string') {
+        try {
+            result = JSON.parse(result);
+        } catch (error) {
+            console.error('Error parsing AI response:', error);
+            throw new Error('Failed to parse AI response');
+        }
     }
+
+    // Normalize the card number: keep digits only (the model may include spaces/dashes).
+    if (result && typeof result.card_number === 'string') {
+        result.card_number = result.card_number.replace(/\D/g, '');
+    }
+
+    return result;
 }
 
 async function handleStart(db, update) {
@@ -143,28 +156,25 @@ async function handleInline(db, update, env) {
     try {
         let amount;
         let cardNumber = user.cardNumber;
+        const trimmed = query.trim();
 
-        if (/^\d+$/.test(query.trim())) {
-            amount = parseInt(query.trim());
+        if (/^\d+$/.test(trimmed)) {
+            // Single integer amount — fast path, no AI needed.
+            amount = parseInt(trimmed, 10);
+        } else if (/^[\d\s+]+$/.test(trimmed)) {
+            // Pure additive expression like "56000 + 12000" — sum locally, no AI needed.
+            amount = trimmed.split('+').reduce((sum, part) => sum + (parseInt(part.trim(), 10) || 0), 0);
         } else {
-            const cardNumberMatch = query.match(PATTERNS.CARD_NUMBER_IN_TEXT);
-            if (cardNumberMatch) {
-                const aiResult = await callWorkerAI(env, query);
+            // Natural-language text, Persian number words, or card-bearing text — use AI.
+            const aiResult = await callWorkerAI(env, query);
 
-                if (aiResult && aiResult.total_amount) {
-                    amount = Math.round(aiResult.total_amount);
-                    if (aiResult.card_number && PATTERNS.CARD_NUMBER.test(aiResult.card_number)) {
-                        cardNumber = aiResult.card_number;
-                    }
-                } else {
-                    throw new Error(ERRORS.INVALID_AMOUNT);
+            if (aiResult && aiResult.total_amount) {
+                amount = Math.round(aiResult.total_amount);
+                if (aiResult.card_number && PATTERNS.CARD_NUMBER.test(aiResult.card_number)) {
+                    cardNumber = aiResult.card_number;
                 }
             } else {
-                const numericValue = parseFloat(query.trim());
-                if (isNaN(numericValue)) {
-                    throw new Error(ERRORS.INVALID_AMOUNT);
-                }
-                amount = Math.round(numericValue);
+                throw new Error(ERRORS.INVALID_AMOUNT);
             }
         }
 
