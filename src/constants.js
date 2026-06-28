@@ -14,35 +14,51 @@ export const API = {
     CONTENT_TYPE: 'application/json'
 };
 
-// Bot Messages
+// Bot Messages (HTML parse mode unless noted)
 export const MESSAGES = {
-    WELCOME: `به بات دونگ خوش آمدید!
+    WELCOME: (botUsername) => `👋 به ربات <b>دُنگمو بده</b> خوش آمدید!
 
-برای راهنمایی کار با بات، از دستور /help استفاده کنید.`,
+هزینه‌های مشترک رو در چند ثانیه بین دوستات تقسیم کن. کافیه توی هر چت یا گروهی اسم ربات رو بنویسی و خرجت رو بگی تا ربات خودش سهم هر نفر رو حساب کنه.
 
-    HELP: (botUsername) => `
-برای ثبت خرج در هر گروهی، به گروه خود بروید و دستور زیر را تایپ کنید:
- 
-<code>@${botUsername} {مبلغ و شماره کارت}</code>
+<b>چند نمونه که می‌تونی همین حالا امتحان کنی</b>
+• <code>@${botUsername} 56000 + 12000 + 8000</code>
+• <code>@${botUsername} ناهار ۸۵ هزار، تاکسی ۳۰ هزار و کافه ۴۵ هزار</code>
+• <code>@${botUsername} شام ۱۲۰ هزار تومان به کارت 6037991234567890</code>
 
-متن ورودی شما به کمک هوش مصنوعی پردازش شده و مبلغ و شماره کارتتان به طور خودکار استخراج می‌شود.
+💳 اگه دوست داری شماره کارتت همیشه توی پیام دنگ بیاد، یک‌بار با /setcard ثبتش کن.
 
-سپس از بین موارد موجود، تعداد نفرات را انتخاب کنید.
+برای راهنمای کامل دستور /help رو بفرست.`,
 
-اگر میخواهید شماره کارت ثابت شما در پیام دونگ نوشته شود، از دستور /setcard استفاده کنید.
-`,
+    HELP: (botUsername) => `📘 <b>راهنمای ربات دُنگمو بده</b>
 
-    SET_CARD_PROMPT: `برای ست شدن پیش‌فرض شماره کارت، لطفا شماره کارت خود را ارسال کنید.`,
+برای تقسیم یک هزینه کافیه توی هر گروه یا چت اسم ربات رو بنویسی و خرجت رو بگی، بعد از بین گزینه‌ها تعداد نفرات رو انتخاب کنی تا سهم هر نفر حساب بشه. هر کس هم با دکمه‌ی «دنگمو دادم» پرداختش رو ثبت می‌کنه.
+
+<b>چه چیزهایی می‌تونی بنویسی؟</b>
+• یک مبلغ ساده مثل <code>@${botUsername} 120000</code>
+• جمع چند خرج مثل <code>@${botUsername} 56000 + 12000</code>
+• با زبان خودت مثل <code>@${botUsername} ناهار ۸۵ هزار، تاکسی ۳۰ هزار</code>
+• همراه شماره کارت مثل <code>@${botUsername} دنگ سفر ۲۵۰ هزار به کارت 6037991234567890</code>
+
+💳 با دستور /setcard شماره کارتت رو ذخیره کن تا خودکار توی پیام دنگ بیاد.`,
+
+    SET_CARD_PROMPT: `لطفاً شماره کارت ۱۶ رقمی‌ات رو بفرست تا به‌صورت پیش‌فرض توی پیام‌های دنگ بیاد. مثلاً <code>6037991234567890</code>
+
+برای انصراف دستور /cancel رو بفرست.`,
 
     CANCEL: `عملیات لغو شد.`,
 
-    DEFAULT_TEXT: `برای راهنمایی کار با بات، از دستور /help استفاده کنید.`,
+    DEFAULT_TEXT: (botUsername) => `برای تقسیم هزینه توی یک گروه اسم ربات رو بنویس و خرجت رو بگو، مثلاً <code>@${botUsername} 56000 + 12000</code>
 
-    CARD_INVALID: `شماره کارت نامعتبر است. لطفا شماره کارت را به درستی وارد کنید.`,
+برای راهنمای کامل دستور /help رو بفرست.`,
 
-    CARD_SUCCESS: `شماره کارت شما با موفقیت ثبت شد.`,
+    CARD_INVALID: `شماره کارت معتبر نیست. باید ۱۶ رقم باشه و با ۲، ۵، ۶ یا ۹ شروع بشه. مثلاً <code>6037991234567890</code>`,
 
-    INVALID_EXPRESSION: ` مبلغ نامعتبر است. لطفا مبلغ و یا شماره کارت را به صورت عددی غیر اعشاری وارد کنید.`
+    CARD_SUCCESS: `✅ شماره کارتت ذخیره شد و از این به بعد خودکار توی پیام‌های دنگ میاد.`,
+
+    INVALID_EXPRESSION: `🤔 نتونستم مبلغ رو تشخیص بدم. یکی از این نمونه‌ها رو امتحان کن.
+• <code>56000 + 12000</code>
+• <code>شام ۵۶ هزار، نوشیدنی ۱۲ هزار تومان</code>
+• <code>ناهار ۸۰ هزار به کارت 6037991234567890</code>`
 };
 
 // Callback Messages
@@ -55,8 +71,8 @@ export const CALLBACK_MESSAGES = {
 
 // Inline Article Content
 export const INLINE_CONTENT = {
-    INVALID_TITLE: 'مبلغ نامعتبر',
-    INVALID_DESCRIPTION: 'مجموع هزینه را وارد کنید.',
+    INVALID_TITLE: '✏️ مبلغ را بنویسید',
+    INVALID_DESCRIPTION: 'مثلاً «۵۶ هزار + ۱۲ هزار» یا «ناهار ۸۵ هزار، تاکسی ۳۰ هزار»',
     UNLIMITED_TITLE: 'دنگ نامحدود',
     LIMITED_TITLE: (totalPeople) => `دنگ ${totalPeople} نفره`,
     VALID_DESCRIPTION: (perPerson, cardNumber) => {
@@ -76,6 +92,13 @@ export const BUTTONS = {
 // Regex Patterns
 export const PATTERNS = {
     CARD_NUMBER: /^[2569]\d{15}$/,
+    // A card number embedded in text: 16 digits, contiguous or in 4-4-4-4 groups
+    // separated by spaces/dashes. Boundaries prevent grabbing part of a longer number.
+    CARD_IN_TEXT: /(?<!\d)[2569]\d{3}[ -]?\d{4}[ -]?\d{4}[ -]?\d{4}(?!\d)/,
+    // Currency words that are noise around a numeric amount (stripped before parsing).
+    CURRENCY_FILLER: /تومان|تومن|تومه|ريال|ریال|toman|rial/gi,
+    // A query that is only digits, whitespace and "+", parseable without AI.
+    PLAIN_AMOUNT: /^[\d\s+]+$/,
     DEEP_LINK_SETCARD: /start setcard/,
     CALLBACK_PAYDONG: /paydong\|(.+)/
 };
@@ -117,7 +140,7 @@ Rules for card_number:
 - If no valid 16-digit card number is present, return an empty string "".
 
 Return ONLY the structured object. Do not explain.`,
-    // JSON-schema for Workers AI structured outputs — guarantees schema-valid JSON.
+    // JSON-schema for Workers AI structured outputs, guarantees schema-valid JSON.
     SCHEMA: {
         type: 'object',
         properties: {

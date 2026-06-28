@@ -61,7 +61,7 @@ export default {
 
             switch (command) {
                 case 'start':
-                    return await handleStart(db, update);
+                    return await handleStart(db, update, botUsername);
                 case 'setcard':
                     return await handleSetCard(db, update);
                 case 'help':
@@ -74,7 +74,7 @@ export default {
         }
 
         if (text) {
-            return await handleText(db, update);
+            return await handleText(db, update, botUsername);
         }
 
         return { success: true, message: 'Message type not handled' };

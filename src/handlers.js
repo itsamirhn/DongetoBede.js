@@ -41,7 +41,35 @@ async function callWorkerAI(env, query) {
     return result;
 }
 
-async function handleStart(db, update) {
+// Parse amount + card from an inline query WITHOUT calling AI.
+// Pulls out a card number (contiguous or 4-4-4-4 spaced/dashed), then — if what
+// remains is plain digits — sums it locally. Returns needsAI=true when the amount
+// is expressed in words/multipliers (e.g. "۵۶ هزار") and needs the model.
+function parseSimpleQuery(query, defaultCard) {
+    let cardNumber = defaultCard;
+    let cardFound = false;
+    let rest = query.trim();
+
+    const cardMatch = rest.match(PATTERNS.CARD_IN_TEXT);
+    if (cardMatch) {
+        const normalized = cardMatch[0].replace(/[ -]/g, '');
+        if (PATTERNS.CARD_NUMBER.test(normalized)) {
+            cardNumber = normalized;
+            cardFound = true;
+            rest = rest.replace(cardMatch[0], ' ');
+        }
+    }
+
+    const cleaned = rest.replace(PATTERNS.CURRENCY_FILLER, ' ').trim();
+    if (/\d/.test(cleaned) && PATTERNS.PLAIN_AMOUNT.test(cleaned)) {
+        const amount = cleaned.match(/\d+/g).reduce((sum, group) => sum + parseInt(group, 10), 0);
+        return { amount, cardNumber, cardFound, needsAI: false };
+    }
+
+    return { amount: null, cardNumber, cardFound, needsAI: true };
+}
+
+async function handleStart(db, update, botUsername) {
     const user = await getOrCreateUser(db, update);
     const chatId = update.message.chat.id;
     const messageId = update.message.message_id;
@@ -51,7 +79,10 @@ async function handleStart(db, update) {
         return await handleSetCardDeepLink(db, update, user);
     }
 
-    await sendMessage(chatId, MESSAGES.WELCOME, { reply_to_message_id: messageId });
+    await sendMessage(chatId, MESSAGES.WELCOME(botUsername), {
+        parse_mode: API.PARSE_MODE.HTML,
+        reply_to_message_id: messageId
+    });
     return { success: true };
 }
 
@@ -63,7 +94,10 @@ async function handleSetCard(db, update) {
     user.state = CONFIG.SETCARD_STATE;
     await db.updateUser(user);
 
-    await sendMessage(chatId, MESSAGES.SET_CARD_PROMPT, { reply_to_message_id: messageId });
+    await sendMessage(chatId, MESSAGES.SET_CARD_PROMPT, {
+        parse_mode: API.PARSE_MODE.HTML,
+        reply_to_message_id: messageId
+    });
     return { success: true };
 }
 
@@ -76,7 +110,10 @@ async function handleSetCardDeepLink(db, update, user) {
         user.state = CONFIG.SETCARD_STATE;
         await db.updateUser(user);
 
-        await sendMessage(chatId, MESSAGES.SET_CARD_PROMPT, { reply_to_message_id: messageId });
+        await sendMessage(chatId, MESSAGES.SET_CARD_PROMPT, {
+            parse_mode: API.PARSE_MODE.HTML,
+            reply_to_message_id: messageId
+        });
     }
 
     return { success: true };
@@ -118,7 +155,7 @@ async function handleCancel(db, update) {
     return { success: true };
 }
 
-async function handleText(db, update) {
+async function handleText(db, update, botUsername) {
     const user = await getOrCreateUser(db, update);
     const chatId = update.message.chat.id;
     const messageId = update.message.message_id;
@@ -128,7 +165,10 @@ async function handleText(db, update) {
         return await handleSetCardText(db, chatId, messageText, user, messageId);
     }
 
-    await sendMessage(chatId, MESSAGES.DEFAULT_TEXT, { reply_to_message_id: messageId });
+    await sendMessage(chatId, MESSAGES.DEFAULT_TEXT(botUsername), {
+        parse_mode: API.PARSE_MODE.HTML,
+        reply_to_message_id: messageId
+    });
     return { success: true };
 }
 
@@ -136,7 +176,10 @@ async function handleSetCardText(db, chatId, messageText, user, messageId) {
     const cardNumber = toEnglishDigits(messageText.trim());
 
     if (!PATTERNS.CARD_NUMBER.test(cardNumber)) {
-        await sendMessage(chatId, MESSAGES.CARD_INVALID, { reply_to_message_id: messageId });
+        await sendMessage(chatId, MESSAGES.CARD_INVALID, {
+            parse_mode: API.PARSE_MODE.HTML,
+            reply_to_message_id: messageId
+        });
         return { success: false };
     }
 
@@ -144,7 +187,10 @@ async function handleSetCardText(db, chatId, messageText, user, messageId) {
     user.state = CONFIG.DEFAULT_STATE;
     await db.updateUser(user);
 
-    await sendMessage(chatId, MESSAGES.CARD_SUCCESS, { reply_to_message_id: messageId });
+    await sendMessage(chatId, MESSAGES.CARD_SUCCESS, {
+        parse_mode: API.PARSE_MODE.HTML,
+        reply_to_message_id: messageId
+    });
     return { success: true };
 }
 
@@ -153,24 +199,25 @@ async function handleInline(db, update, env) {
     const query = toEnglishDigits(update.inline_query.query);
     const inlineQueryId = update.inline_query.id;
 
-    try {
-        let amount;
-        let cardNumber = user.cardNumber;
-        const trimmed = query.trim();
+    // Empty query: show the example/help article instead of spending an AI call.
+    if (!query.trim()) {
+        await answerInlineQuery(inlineQueryId, [getInvalidArticle()]);
+        return { success: true };
+    }
 
-        if (/^\d+$/.test(trimmed)) {
-            // Single integer amount — fast path, no AI needed.
-            amount = parseInt(trimmed, 10);
-        } else if (/^[\d\s+]+$/.test(trimmed)) {
-            // Pure additive expression like "56000 + 12000" — sum locally, no AI needed.
-            amount = trimmed.split('+').reduce((sum, part) => sum + (parseInt(part.trim(), 10) || 0), 0);
-        } else {
-            // Natural-language text, Persian number words, or card-bearing text — use AI.
+    try {
+        // Try to read the amount/card cheaply; only fall back to AI for number-words.
+        const parsed = parseSimpleQuery(query, user.cardNumber);
+        let amount = parsed.amount;
+        let cardNumber = parsed.cardNumber;
+
+        if (parsed.needsAI) {
             const aiResult = await callWorkerAI(env, query);
 
             if (aiResult && aiResult.total_amount) {
                 amount = Math.round(aiResult.total_amount);
-                if (aiResult.card_number && PATTERNS.CARD_NUMBER.test(aiResult.card_number)) {
+                // Prefer a card we already extracted by regex; otherwise take the AI's.
+                if (!parsed.cardFound && aiResult.card_number && PATTERNS.CARD_NUMBER.test(aiResult.card_number)) {
                     cardNumber = aiResult.card_number;
                 }
             } else {
@@ -246,7 +293,7 @@ function getInvalidArticle() {
         description: INLINE_CONTENT.INVALID_DESCRIPTION,
         input_message_content: {
             message_text: MESSAGES.INVALID_EXPRESSION,
-            parse_mode: API.PARSE_MODE.MARKDOWN
+            parse_mode: API.PARSE_MODE.HTML
         },
         reply_markup: {
             inline_keyboard: [
